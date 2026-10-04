@@ -41,7 +41,7 @@ export default function Login() {
     }
     setBusy(false);
     if (res.error) {
-      setError(res.error.message || "Kichu ekta bhul hoyeche");
+      setError(res.error.message || "Server error (" + res.error.status + "). /api/health check koro");
       return;
     }
     router.push("/home");
