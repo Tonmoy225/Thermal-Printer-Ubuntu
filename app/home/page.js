@@ -7,15 +7,20 @@ import BottomTabs from "../../components/BottomTabs";
 import DemoModal from "../../components/DemoModal";
 import TextPanel from "../../components/TextPanel";
 import PicturePanel from "../../components/PicturePanel";
-import { FEATURES } from "../../lib/features";
+import { useT, useErr, useSettings } from "../../components/Providers";
+import { buildTools } from "../../lib/features";
 import { authClient } from "../../lib/auth-client";
 import { connectPrinter, checkBluetooth, isConnected, printText } from "../../lib/printer";
 
 export default function Home() {
   const router = useRouter();
+  const t = useT();
+  const errText = useErr();
+  const { settings } = useSettings();
   const { data: session, isPending } = authClient.useSession();
   const [name, setName] = useState("MX10");
-  const [status, setStatus] = useState("Not connected");
+  const [status, setStatus] = useState("notConnected");
+  const [connName, setConnName] = useState("");
   const [bt, setBt] = useState("checking");
   const [demo, setDemo] = useState(null);
   const [active, setActive] = useState(null);
@@ -28,26 +33,24 @@ export default function Home() {
     const saved = localStorage.getItem("printerName");
     if (saved) setName(saved);
     checkBluetooth().then(setBt);
-    const t = setInterval(() => checkBluetooth().then(setBt), 3000);
-    return () => clearInterval(t);
+    const timer = setInterval(() => checkBluetooth().then(setBt), 3000);
+    return () => clearInterval(timer);
   }, []);
 
   async function onConnect() {
     try {
-      const n = await connectPrinter(name, () => setStatus("Disconnected"));
+      const n = await connectPrinter(name, () => setStatus("disconnected"));
       localStorage.setItem("printerName", name);
-      setStatus("Connected: " + n);
+      setConnName(n);
+      setStatus("connected");
     } catch (e) {
-      alert("Connect hoy nai: " + e.message);
+      alert(t("home.connectFail", { msg: errText(e) }));
     }
   }
 
   function openFeature(f) {
-    if (f.kind !== "soon" && localStorage.getItem("skipDemo:" + f.id)) {
-      startFeature(f);
-    } else {
-      setDemo(f);
-    }
+    if (f.kind !== "soon" && localStorage.getItem("skipDemo:" + f.id)) startFeature(f);
+    else setDemo(f);
   }
 
   async function startFeature(f) {
@@ -56,7 +59,7 @@ export default function Home() {
       try {
         await printText("PrintHub\nTest print OK", { size: 36, align: "center" });
       } catch (e) {
-        alert(e.message);
+        alert(errText(e));
       }
       return;
     }
@@ -64,10 +67,14 @@ export default function Home() {
   }
 
   if (isPending || !session) {
-    return <div className="p-10 text-center text-purple-800">Loading...</div>;
+    return <div className="p-10 text-center text-brand-dark">{t("nav.loading")}</div>;
   }
 
-  const connected = status.startsWith("Connected") && isConnected();
+  const tools = buildTools(settings, t);
+  const connected = status === "connected" && isConnected();
+  const statusText =
+    status === "connected" ? t("home.connected", { name: connName }) :
+    status === "disconnected" ? t("home.disconnected") : t("home.notConnected");
 
   return (
     <div className="pb-20 md:pb-10">
@@ -76,39 +83,39 @@ export default function Home() {
       <div className="max-w-6xl mx-auto px-4 mt-5">
         <div className="bg-white rounded-2xl shadow-md p-4 flex flex-col md:flex-row md:items-center gap-3">
           <div className="flex items-center gap-3 flex-1">
-            <span className={"p-3 rounded-xl " + (connected ? "bg-green-100 text-green-700" : "bg-purple-100 text-purple-700")}>
+            <span className={"p-3 rounded-xl " + (connected ? "bg-green-100 text-green-700" : "bg-brand-soft text-brand-dark")}>
               {connected ? <BluetoothConnected size={22} /> : <Bluetooth size={22} />}
             </span>
             <div>
-              <div className="font-semibold">{status}</div>
+              <div className="font-semibold">{statusText}</div>
               <div className="text-sm">
-                {bt === "on" && <span className="text-green-600">Bluetooth: ON</span>}
-                {bt === "off" && <span className="text-red-600">Bluetooth: OFF. Bluetooth on koro.</span>}
-                {bt === "unsupported" && <span className="text-red-600">Ai browser e Bluetooth support nai. Chrome use koro.</span>}
-                {bt === "checking" && <span className="text-gray-500">Checking...</span>}
+                {bt === "on" && <span className="text-green-600">{t("home.btOn")}</span>}
+                {bt === "off" && <span className="text-red-600">{t("home.btOff")}</span>}
+                {bt === "unsupported" && <span className="text-red-600">{t("home.btUnsupported")}</span>}
+                {bt === "checking" && <span className="text-gray-500">{t("home.btChecking")}</span>}
               </div>
             </div>
           </div>
           <div className="flex gap-2">
-            <input className="border rounded-lg p-2 flex-1 md:w-40" value={name} onChange={(e) => setName(e.target.value)} placeholder="Printer name" />
-            <button onClick={onConnect} className="bg-linear-to-r from-violet-700 to-fuchsia-600 text-white px-5 rounded-lg font-semibold">
-              Connect
+            <input className="border rounded-lg p-2 flex-1 md:w-40" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("home.printerName")} />
+            <button onClick={onConnect} className="bg-brand text-white px-5 rounded-lg font-semibold">
+              {t("home.connect")}
             </button>
           </div>
         </div>
 
-        <h2 className="text-lg font-bold text-purple-900 mt-6 mb-3">Tools</h2>
+        <h2 className="text-lg font-bold text-brand-dark mt-6 mb-3">{t("home.tools")}</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          {FEATURES.map((f, i) => {
+          {tools.map((f) => {
             const Icon = f.icon;
-            const big = i === 0;
+            const big = f.id === "picture";
             return (
               <button
                 key={f.id}
                 onClick={() => openFeature(f)}
                 className={
                   big
-                    ? "col-span-2 sm:col-span-3 lg:col-span-4 bg-linear-to-r from-violet-700 via-purple-600 to-fuchsia-600 text-white rounded-2xl p-6 md:p-8 shadow-lg flex items-center justify-center gap-4 text-2xl font-bold"
+                    ? "col-span-2 sm:col-span-3 lg:col-span-4 bg-brand text-white rounded-2xl p-6 md:p-8 shadow-lg flex items-center justify-center gap-4 text-2xl font-bold"
                     : "bg-white rounded-2xl p-5 shadow-md flex flex-col items-center gap-3 hover:shadow-lg"
                 }
               >
@@ -119,8 +126,8 @@ export default function Home() {
                   </>
                 ) : (
                   <>
-                    <span className="bg-linear-to-br from-violet-600 to-fuchsia-500 text-white p-3 rounded-xl"><Icon size={26} /></span>
-                    <span className="font-medium text-purple-950">{f.title}</span>
+                    <span className="bg-brand text-white p-3 rounded-xl"><Icon size={26} /></span>
+                    <span className="font-medium text-brand-dark">{f.title}</span>
                   </>
                 )}
               </button>

@@ -17,9 +17,9 @@ export async function GET() {
     let hint = "";
     const m = err.message || "";
     if (/ServerSelection|whitelist|timed out|ENOTFOUND/i.test(m + err.name)) {
-      hint = "Atlas > Network Access e 0.0.0.0/0 allow koro";
+      hint = "In Atlas > Network Access, allow 0.0.0.0/0";
     } else if (/bad auth|Authentication failed/i.test(m)) {
-      hint = "MONGODB_URI er username/password bhul";
+      hint = "The username or password in MONGODB_URI is wrong";
     }
     return Response.json({ ok: false, error: err.name + ": " + m, hint, env }, { status: 500 });
   }

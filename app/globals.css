@@ -1,9 +1,22 @@
 @import "tailwindcss";
 
+:root {
+  --brand-from: #6d28d9;
+  --brand-via: #9333ea;
+  --brand-to: #c026d3;
+}
+
 * {
-  border-color: #d8b4fe;
+  border-color: color-mix(in srgb, var(--brand-from) 30%, white);
 }
 
 body {
-  font-family: Arial, sans-serif;
+  font-family: Arial, "Noto Sans Bengali", "Noto Sans SC", sans-serif;
 }
+
+.bg-brand { background-image: linear-gradient(to right, var(--brand-from), var(--brand-via), var(--brand-to)); }
+.bg-brand-page { background-image: linear-gradient(to bottom right, color-mix(in srgb, var(--brand-from) 8%, white), color-mix(in srgb, var(--brand-to) 8%, white)); }
+.bg-brand-soft { background-color: color-mix(in srgb, var(--brand-from) 12%, white); }
+.hover-bg-brand-soft2:hover { background-color: color-mix(in srgb, var(--brand-from) 22%, white); }
+.text-brand-dark { color: color-mix(in srgb, var(--brand-from) 75%, black); }
+.border-brand-line { border-color: color-mix(in srgb, var(--brand-from) 35%, white); }

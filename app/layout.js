@@ -1,4 +1,5 @@
 import "./globals.css";
+import Providers from "../components/Providers";
 
 export const metadata = {
   title: "PrintHub",
@@ -8,8 +9,8 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-linear-to-br from-violet-50 via-purple-50 to-fuchsia-50 text-gray-900">
-        {children}
+      <body className="min-h-screen bg-brand-page text-gray-900">
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
